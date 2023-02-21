@@ -1,0 +1,6 @@
+dropout_rate: 0.0
+hidden_size: 30
+input_size: 43
+learning_rate: 0.001
+output_size: 1
+use_cpu: false
