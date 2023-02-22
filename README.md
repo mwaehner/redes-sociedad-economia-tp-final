@@ -1,3 +1,7 @@
+Trabajo final de la materia "Redes, Sociedad y Economía" dictada por Esteban Feuerstein
+
+-------------------------------------
+
 Para correr el proyecto:
 
 Desde el directorio del proyecto, crear un nuevo virtual env:
