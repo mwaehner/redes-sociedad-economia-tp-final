@@ -45,7 +45,7 @@ if __name__ == '__main__':
         '--output_col',
         type=str,
         default="G3",
-        help='The path to the directory containing the data to train the model'
+        help='Output column'
     )
     parser.add_argument(
         '--tb_dir',

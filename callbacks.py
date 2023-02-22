@@ -20,10 +20,10 @@ class ModelWeightsHistogramCallback(pl.Callback):
 class ClassificationMetricsCallback(pl.Callback):
     def __init__(self, fold_numbers):
         super(ClassificationMetricsCallback, self).__init__()
-        self.train_acc = Accuracy()
-        self.val_acc = Accuracy()
-        self.val_recall = Recall()
-        self.val_precision = Precision()
+        self.train_acc = Accuracy(task="binary")
+        self.val_acc = Accuracy(task="binary")
+        self.val_recall = Recall(task="binary")
+        self.val_precision = Precision(task="binary")
         self.fold_numbers = fold_numbers
 
         if torch.cuda.is_available():
@@ -37,30 +37,16 @@ class ClassificationMetricsCallback(pl.Callback):
         y_hat = pl_module.all_validation_y_hats
         metrics = {
             "val_acc": self.val_acc(y_hat, y),
-            "val_f1_score": f1_score(y_hat, y),
+            "val_f1_score": f1_score(y_hat, y, task="binary"),
             "val_recall": self.val_recall(y_hat, y),
             "val_precision": self.val_precision(y_hat, y),
-            "val_auroc": auroc(y_hat, y)
+            "val_auroc": auroc(y_hat, y, task="binary")
         }
 
         for metric_name, metric_value in metrics.items():
             pl_trainer.logger.experiment.add_scalars(f'metrics_by_fold/{metric_name}',
                                                      {f'{pl_module.fold_number}': metric_value},
                                                      global_step=pl_module.current_epoch)
-        glob_path = Path(pl_trainer.log_dir)
-        pattern_auroc = "metrics_by_fold_val_auroc*"
-        input_event_dirs_auroc = [str(pp) for pp in glob_path.glob(pattern_auroc)]
-        event_aurocs = tbr.load_tb_events(input_event_dirs_auroc, handle_dup_steps='keep-last', strict_steps=False)
-        max_auroc = list(list(tbr.reduce_events(event_aurocs, ('max',))['max'].values())[0])[0]
-        # Only plot val_auroc for best auroc found
-        if metrics["val_auroc"].item() > max_auroc:
-            rcd = RocCurveDisplay.from_predictions(y.cpu(), y_hat.cpu())
-            pl_trainer.logger.experiment.add_figure(
-                f'Metrics',
-                rcd.figure_,
-                pl_module.current_epoch,
-                close=True
-            )
 
     def teardown(self, pl_trainer: "pl.Trainer", pl_module: "pl.LightningModule", stage: Optional[str] = 'fit') -> None:
         if pl_module.fold_number == self.fold_numbers - 1:
